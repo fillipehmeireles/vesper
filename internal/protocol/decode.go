@@ -41,6 +41,9 @@ func Decode(rawMsg string) (Message, error) {
 		message.Body = value
 	}
 
+	if err := message.Validate(); err != nil {
+		return Message{}, err
+	}
 
 	return message, nil
 }

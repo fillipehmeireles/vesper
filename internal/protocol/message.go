@@ -6,8 +6,7 @@ import "errors"
  * Message:
  Origin-Node-Id: 0\r\n
  Origin-Node-IPAddr: 192.168.0.25\r\n
- Body: pied piper\r\n
- \r\n
+ Body: pied piper
 */
 
 const (
