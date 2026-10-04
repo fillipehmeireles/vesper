@@ -17,13 +17,13 @@ const (
 )
 
 type Message struct {
-	OriginNodeID string
+	OriginNodeID int
 	OriginNodeIPAddr string
 	Body string
 }
 
 func (m Message) Validate() error {
-	if m.OriginNodeID == "" {
+	if m.OriginNodeID == 0 {
 		return errors.New("origin node id can't be empty")
 	}
 	if m.OriginNodeIPAddr == "" {

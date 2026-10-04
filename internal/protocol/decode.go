@@ -2,6 +2,7 @@ package protocol
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 )
 
@@ -13,7 +14,7 @@ func Decode(rawMsg string) (Message, error) {
 	messageMap := make(map[string]string, 3)
 	for _, msgData := range rawSplittedMsg {
 		kv := strings.Split(msgData,":")
-		messageMap[kv[0]] = kv[1]
+		messageMap[kv[0]] = strings.TrimSpace(kv[1])
 	}
 
 	var message Message
@@ -21,7 +22,11 @@ func Decode(rawMsg string) (Message, error) {
 	if value, exists := messageMap[KeyOriginNodeID]; !exists {
 		return Message{},fmt.Errorf("message should contain: %s"  , value)
 	} else {
-		message.OriginNodeID = value
+		n, err := strconv.Atoi(value)
+		if err != nil {
+			return Message{}, fmt.Errorf("error on converting number %s from string to int", value)
+		}
+		message.OriginNodeID = n
 	}
 
 	if value, exists := messageMap[KeyOriginNodeIPAddr]; !exists {
