@@ -1,6 +1,9 @@
 package udp
 
-import "net"
+import (
+	"net"
+	logUtils "vesper/internal/utils"
+)
 
 func (t *Transport) Receive() ([]byte, net.Addr, error) {
 	// TODO: get buffer size from config
@@ -8,6 +11,7 @@ func (t *Transport) Receive() ([]byte, net.Addr, error) {
 
 	n, remote, err := t.conn.ReadFromUDP(buf)
 	if err != nil {
+		logUtils.LogError(err.Error())
 		return nil, nil, err
 	}
 

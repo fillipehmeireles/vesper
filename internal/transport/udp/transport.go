@@ -23,3 +23,7 @@ func New(port int) (*Transport, error) {
 		port: port,
 	}, nil
 }
+
+func (tx *Transport) CloseConnection() error {
+	return tx.conn.Close()
+}

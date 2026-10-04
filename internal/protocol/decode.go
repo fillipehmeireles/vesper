@@ -2,12 +2,12 @@ package protocol
 
 import (
 	"fmt"
+	"reflect"
 	"strconv"
 	"strings"
 )
 
-
-
+// TODO: decode []byte instead of string
 func Decode(rawMsg string) (Message, error) {
 	rawSplittedMsg := strings.Split(rawMsg, "\r\n")
 
@@ -18,29 +18,33 @@ func Decode(rawMsg string) (Message, error) {
 	}
 
 	var message Message
-
-	if value, exists := messageMap[KeyOriginNodeID]; !exists {
-		return Message{},fmt.Errorf("message should contain: %s"  , value)
-	} else {
-		n, err := strconv.Atoi(value)
-		if err != nil {
-			return Message{}, fmt.Errorf("error on converting number %s from string to int", value)
+	for _, key := range getMessageKeysStrArr() {
+		if value, exists := messageMap[key]; !exists {
+			return Message{}, fmt.Errorf("message should contain: %s"  , value)
+		} else {
+			v := reflect.ValueOf(&message).Elem()
+			field := v.FieldByName(key)
+			if field.IsValid() && field.CanSet() {
+				field.SetString(value)
+			}
 		}
-		message.OriginNodeID = n
 	}
 
-	if value, exists := messageMap[KeyOriginNodeIPAddr]; !exists {
-		return Message{}, fmt.Errorf("message should contain: %s"  , value)
-	} else {
-		message.OriginNodeIPAddr = value
+	for _, key := range getMessageKeysIntArr() {
+		if value, exists := messageMap[key]; !exists {
+			return Message{}, fmt.Errorf("message should contain: %s"  , value)
+		} else {
+			v := reflect.ValueOf(&message).Elem()
+			field := v.FieldByName(key)
+			if field.IsValid() && field.CanSet() {
+				n, err := strconv.Atoi(value)
+				if err != nil {
+					return Message{}, fmt.Errorf("error on converting number %s from string to int", value)
+				}
+				field.SetInt(int64(n))
+			}
+		}
 	}
-
-	if value, exists := messageMap[KeyBody]; !exists {
-		return Message{}, fmt.Errorf("message should contain: %s"  , value)
-	} else {
-		message.Body = value
-	}
-
 	if err := message.Validate(); err != nil {
 		return Message{}, err
 	}

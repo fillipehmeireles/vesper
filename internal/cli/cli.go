@@ -6,19 +6,35 @@ import (
 	"fmt"
 )
 
+type CliArgs struct{
+	NodeName string
+	NodePort int
+}
 
 func Usage() {
 	fmt.Println("Flags:")
 	fmt.Println("--name\t\t Node name.")
 }
 
-func GeNameFlag() (string, error) {
+func GetArgs() (CliArgs, error) {
 	name := flag.String("name", "", "Node name")
+	port := flag.Int("port", 0, "Node Port")
 	flag.Parse()
+
 	if *name == "" {
 		Usage()
-		return "", errors.New("Please provide the node name (--name/-n).")
+		return CliArgs{}, errors.New("Please provide the node name (--name/-n).")
 	}
 
-	return *name, nil
+	if *port == 0 {
+		Usage()
+		return CliArgs{}, errors.New("Please provide the node port (--port/-p).")
+	}
+
+	return CliArgs{
+		NodeName: *name,
+		NodePort: *port,
+	}, nil
 }
+
+

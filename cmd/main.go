@@ -1,46 +1,19 @@
 package main
 
 import (
-	"fmt"
-	"net"
 	"time"
 	"vesper/internal/cli"
+	"vesper/internal/discovery"
 	ipv4 "vesper/internal/network"
 	"vesper/internal/node"
+	"vesper/internal/transport/udp"
 	logUtils "vesper/internal/utils"
+
+	"github.com/google/uuid"
 )
 
-func listen(conn *net.UDPConn) {
-	buf := make([]byte, 1024)
-
-	for {
-		n, remote, err := conn.ReadFromUDP(buf)
-		if err != nil {
-			logUtils.LogError(err.Error())
-			continue
-		}
-		logUtils.LogInfo(fmt.Sprintf(
-			"received %q from %s\n",
-			string(buf[:n]),
-			remote,
-		))
-	}
-}
-
-func broadcast(conn *net.UDPConn, nodeName string) error {
-	addr := &net.UDPAddr{
-		IP:   net.IPv4bcast,
-		Port: 6969,
-	}
-
-	msg := []byte("VESPER|DISCOVER|" + nodeName)
-
-	_, err := conn.WriteToUDP(msg, addr)
-	return err
-}
-
 func main() {
-	name, err := cli.GeNameFlag()
+	cliArgs, err := cli.GetArgs()
 	if err != nil {
 		logUtils.LogError(err.Error())
 		return
@@ -53,35 +26,21 @@ func main() {
 	}
 
 	node := node.Node {
-		Id: 0,
-			Name: name,
+		ID: uuid.NewString(),
+			Name: cliArgs.NodeName,
 			IpAddr: ip,
+			Port: cliArgs.NodePort,
 			LastSeenTS: time.Now(),
 		}
 
-	addr, err := net.ResolveUDPAddr("udp", ":6969")
-    if err != nil {
-        logUtils.LogError(fmt.Sprintf("Couldn’t resolve address: %s", err.Error()))
+	transport, err:= udp.New(cliArgs.NodePort)
+    defer transport.CloseConnection()
+	if err != nil {
+		logUtils.LogError(err.Error())
 		return
-    }
+	}
 
-    conn, err := net.ListenUDP("udp", addr)
-    if err != nil {
-        logUtils.LogError(fmt.Sprintf("Listen failed: %s", err.Error()))
-		return
-    }
-	logUtils.LogInfo(fmt.Sprintf("%s (%s) Listening", node.Name, node.IpAddr))
-    defer conn.Close()
+	service := discovery.NewService(&node, transport)
 
-
-	go listen(conn)
-
-    for {
-		if err := broadcast(conn, node.Name); err != nil {
-			logUtils.LogError(err.Error())
-		}
-
-		time.Sleep(2 * time.Second)
-    }
-
+	service.Run()
 }

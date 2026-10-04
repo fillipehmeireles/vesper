@@ -1,10 +1,13 @@
 package node
 
-import "time"
+import (
+	"time"
+)
 
 type Node struct {
-	Id int
+	ID string
 	Name string
 	IpAddr string
+	Port int
 	LastSeenTS time.Time
 }
