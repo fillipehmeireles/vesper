@@ -1,7 +1,6 @@
 package ipv4
 
 import (
-	"os"
 	"net"
 	"errors"
 )
@@ -11,24 +10,16 @@ const (
 )
 
 func GetNodeIP() (string, error) {
-	host, err := os.Hostname()
+	conn, err := net.Dial("udp4", "8.8.8.8:80")
 	if err != nil {
 		return "", err
 	}
-	addrs, err := net.LookupIP(host)
-	if err != nil {
-		return "", err
+	defer conn.Close()
+
+	addr, ok := conn.LocalAddr().(*net.UDPAddr)
+	if !ok {
+		return "", errors.New("unexpected local address type")
 	}
 
-	for _, addr := range addrs {
-		if ipv4 := addr.To4(); ipv4 != nil {
-			// TODO: FIX
-			if ipv4.String()[:3] != "127" {
-				return ipv4.String(), nil
-			}
-		}
-	}
-	return "", errors.New(ErrGetNodeIP)
+	return addr.IP.String(), nil
 }
-
-
