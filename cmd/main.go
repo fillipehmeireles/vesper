@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"net"
 	"time"
 	"vesper/internal/cli"
@@ -11,6 +10,34 @@ import (
 	logUtils "vesper/internal/utils"
 )
 
+func listen(conn *net.UDPConn) {
+	buf := make([]byte, 1024)
+
+	for {
+		n, remote, err := conn.ReadFromUDP(buf)
+		if err != nil {
+			logUtils.LogError(err.Error())
+			continue
+		}
+		logUtils.LogInfo(fmt.Sprintf(
+			"received %q from %s\n",
+			string(buf[:n]),
+			remote,
+		))
+	}
+}
+
+func broadcast(conn *net.UDPConn, nodeName string) error {
+	addr := &net.UDPAddr{
+		IP:   net.IPv4bcast,
+		Port: 6969,
+	}
+
+	msg := []byte("VESPER|DISCOVER|" + nodeName)
+
+	_, err := conn.WriteToUDP(msg, addr)
+	return err
+}
 
 func main() {
 	name, err := cli.GeNameFlag()
@@ -26,7 +53,8 @@ func main() {
 	}
 
 	node := node.Node {
-		Name: name,
+		Id: 0,
+			Name: name,
 			IpAddr: ip,
 			LastSeenTS: time.Now(),
 		}
@@ -45,14 +73,15 @@ func main() {
 	logUtils.LogInfo(fmt.Sprintf("%s (%s) Listening", node.Name, node.IpAddr))
     defer conn.Close()
 
-    buffer := make([]byte, 1024)
+
+	go listen(conn)
+
     for {
-        n, clientAddr, err := conn.ReadFromUDP(buffer)
-        if err != nil {
-            log.Println("Read error:", err)
-            continue
-        }
-        logUtils.LogInfo(fmt.Sprintf("[INFO] %s: Received from %s: %s\n", node.Name, clientAddr, buffer[:n]))
+		if err := broadcast(conn, node.Name); err != nil {
+			logUtils.LogError(err.Error())
+		}
+
+		time.Sleep(2 * time.Second)
     }
 
 }

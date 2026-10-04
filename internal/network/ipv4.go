@@ -11,10 +11,18 @@ const (
 )
 
 func GetNodeIP() (string, error) {
-	host, _ := os.Hostname()
-	addrs, _ := net.LookupIP(host)
+	host, err := os.Hostname()
+	if err != nil {
+		return "", err
+	}
+	addrs, err := net.LookupIP(host)
+	if err != nil {
+		return "", err
+	}
+
 	for _, addr := range addrs {
 		if ipv4 := addr.To4(); ipv4 != nil {
+			// TODO: FIX
 			if ipv4.String()[:3] != "127" {
 				return ipv4.String(), nil
 			}
@@ -22,3 +30,5 @@ func GetNodeIP() (string, error) {
 	}
 	return "", errors.New(ErrGetNodeIP)
 }
+
+
