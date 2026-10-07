@@ -18,6 +18,10 @@ func NewPeerTable(capacity uint) *PeerTable {
 	}
 }
 
+
+func (pt *PeerTable) GetPeerTable() map[string]node.Node{
+	return pt.table
+}
 func (pt *PeerTable) Upsert(node node.Node) {
 	pt.table[node.ID] = node
 }

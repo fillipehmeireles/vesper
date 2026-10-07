@@ -28,11 +28,25 @@ func NewService(n *node.Node, peerTable *PeerTable, tx transport.Transport) *Ser
 
 func (s *Service) Run() error {
 	go s.broadcastLoop()
-
-	logUtils.LogInfo(fmt.Sprintf("node: %s", s.self.Name))
-	logUtils.LogInfo("listening for peers...")
+	fmt.Printf("node: %s\n", s.self.Name)
+	fmt.Println("listening for peers...")
+	fmt.Println()
+	fmt.Print("\033[s")
 
 	for {
+		fmt.Print("\033[u")
+		fmt.Print("\033[J")
+
+		fmt.Println("peers:")
+
+		for _, peer := range s.peerTable.GetPeerTable() {
+			fmt.Printf(
+				"  %-10s %-15s seen %.0fs ago\n",
+				peer.Name,
+				peer.IpAddr,
+				time.Since(peer.LastSeenTS).Seconds(),
+			)
+		}
 		payload, remotePeer, err := s.tx.Receive()
 		if err != nil {
 			logUtils.LogError(err.Error())
@@ -53,6 +67,7 @@ func (s *Service) Run() error {
 		s.handleMessage(msg, remotePeer.Address)
 	}
 }
+
 
 func (s *Service) broadcastLoop() {
 	ticker := time.NewTicker(2 * time.Second)
@@ -85,10 +100,6 @@ func (s *Service) broadcastLoop() {
 func (s *Service) handleMessage(msg protocol.Message, peerIPAddr string) {
 	switch msg.Type {
 	case protocol.MessageTypeDiscover:
-		logUtils.LogInfo(
-			fmt.Sprintf(
-				"peer discovered: %s @ %s",
-				msg.OriginNodeName, peerIPAddr))
 		s.peerTable.Upsert(node.Node{
 			ID:         msg.OriginNodeID,
 			Name:       msg.OriginNodeName,
