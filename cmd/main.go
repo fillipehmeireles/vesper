@@ -33,7 +33,8 @@ func main() {
 			LastSeenTS: time.Now(),
 		}
 
-	transport, err:= udp.New(cliArgs.NodePort)
+	// TODO: get discoveryPort from config/args
+	transport, err:= udp.New(discovery.DiscoveryPort)
     defer transport.CloseConnection()
 	if err != nil {
 		logUtils.LogError(err.Error())

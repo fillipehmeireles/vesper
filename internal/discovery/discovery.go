@@ -10,6 +10,8 @@ import (
 )
 
 
+const DiscoveryPort = 6969
+
 type Transport interface {
 	Broadcast([]byte) error
 	Receive() ([]byte, net.Addr, error)

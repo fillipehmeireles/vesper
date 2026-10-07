@@ -1,0 +1,40 @@
+services:
+  node01:
+    build: .
+    command:
+      - "--name"
+      - "node01"
+      - "--port"
+      - "7001"
+    networks:
+      vesper:
+        ipv4_address: 172.28.0.2
+
+  node02:
+    build: .
+    command:
+      - "--name"
+      - "node02"
+      - "--port"
+      - "7002"
+    networks:
+      vesper:
+        ipv4_address: 172.28.0.3
+
+  node03:
+    build: .
+    command:
+      - "--name"
+      - "node03"
+      - "--port"
+      - "7003"
+    networks:
+      vesper:
+        ipv4_address: 172.28.0.4
+
+networks:
+  vesper:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16
