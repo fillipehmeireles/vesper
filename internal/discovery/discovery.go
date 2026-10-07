@@ -30,13 +30,13 @@ func (s *Service) Run() error {
 	go s.broadcastLoop()
 	fmt.Printf("node: %s\n", s.self.Name)
 	fmt.Println("listening for peers...")
-	fmt.Println()
 	fmt.Print("\033[s")
 
 	for {
 		fmt.Print("\033[u")
 		fmt.Print("\033[J")
 
+		s.peerTable.RemoveInactivePeers()
 		fmt.Println("peers:")
 
 		for _, peer := range s.peerTable.GetPeerTable() {
