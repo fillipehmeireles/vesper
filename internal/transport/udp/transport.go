@@ -24,6 +24,11 @@ func New(port int) (*Transport, error) {
 	}, nil
 }
 
+
+func (tx* Transport) SendMsg(payload []byte, addr *net.UDPAddr) error {
+	_, err := tx.conn.WriteToUDP(payload, addr)
+	return err
+}
 func (tx *Transport) CloseConnection() error {
 	return tx.conn.Close()
 }

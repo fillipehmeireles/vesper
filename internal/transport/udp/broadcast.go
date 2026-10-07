@@ -5,15 +5,16 @@ import (
 	logUtils "vesper/internal/utils"
 )
 
+
 func (t *Transport) Broadcast(payload []byte) error {
 	addr := &net.UDPAddr{
 		IP:   net.IPv4bcast,
 		Port: t.port,
 	}
 
-	_, err := t.conn.WriteToUDP(payload, addr)
-	if err != nil {
+	if err := t.SendMsg(payload, addr); err != nil {
 		logUtils.LogError(err.Error())
+		return err
 	}
-	return err
+	return nil
 }
