@@ -6,15 +6,16 @@ import (
 )
 
 
-func (t *Transport) Broadcast(payload []byte) error {
+func (tx *UDPTransport) Broadcast(payload []byte) error {
 	addr := &net.UDPAddr{
 		IP:   net.IPv4bcast,
-		Port: t.port,
+		Port: tx.port,
 	}
 
-	if err := t.SendMsg(payload, addr); err != nil {
+    if _, err := tx.conn.WriteToUDP(payload, addr); err != nil {
 		logUtils.LogError(err.Error())
 		return err
 	}
+
 	return nil
 }

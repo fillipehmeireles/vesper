@@ -34,7 +34,7 @@ func main() {
 		}
 
 	// TODO: get discoveryPort from config/args
-	transport, err:= udp.New(discovery.DiscoveryPort)
+	transport, err:= udp.NewUDPTransport(discovery.DiscoveryPort)
     defer transport.CloseConnection()
 	if err != nil {
 		logUtils.LogError(err.Error())

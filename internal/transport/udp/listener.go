@@ -1,19 +1,22 @@
 package udp
 
 import (
-	"net"
+	"vesper/internal/transport"
 	logUtils "vesper/internal/utils"
 )
 
-func (t *Transport) Receive() ([]byte, net.Addr, error) {
+func (tx *UDPTransport) Receive() ([]byte, transport.Peer, error) {
 	// TODO: get buffer size from config
 	buf := make([]byte, 1024)
 
-	n, remote, err := t.conn.ReadFromUDP(buf)
+	n, remote, err := tx.conn.ReadFromUDP(buf)
 	if err != nil {
 		logUtils.LogError(err.Error())
-		return nil, nil, err
+		return nil, transport.Peer{}, err
 	}
 
-	return buf[:n], remote, nil
+	return buf[:n], transport.Peer{
+		Address: remote.IP.String(),
+		Port: remote.Port,
+	}, nil
 }

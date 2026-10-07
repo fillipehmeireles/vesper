@@ -1,13 +1,16 @@
 package udp
 
-import "net"
+import (
+	"net"
+	"vesper/internal/transport"
+)
 
-type Transport struct {
+type UDPTransport struct {
 	conn *net.UDPConn
 	port int
 }
 
-func New(port int) (*Transport, error) {
+func NewUDPTransport(port int) (transport.Transport, error) {
 	addr := &net.UDPAddr{
 		IP:   net.IPv4zero,
 		Port: port,
@@ -18,17 +21,23 @@ func New(port int) (*Transport, error) {
 		return nil, err
 	}
 
-	return &Transport{
+	return &UDPTransport{
 		conn: conn,
 		port: port,
 	}, nil
 }
 
 
-func (tx* Transport) SendMsg(payload []byte, addr *net.UDPAddr) error {
-	_, err := tx.conn.WriteToUDP(payload, addr)
-	return err
+func (tx* UDPTransport) Send(payload []byte, address string) error {
+	addr, err := net.ResolveUDPAddr("udp", address)
+    if err != nil {
+        return err
+    }
+
+    _, err = tx.conn.WriteToUDP(payload, addr)
+    return err
 }
-func (tx *Transport) CloseConnection() error {
+
+func (tx *UDPTransport) CloseConnection() error {
 	return tx.conn.Close()
 }

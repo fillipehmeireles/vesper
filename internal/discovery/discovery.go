@@ -2,29 +2,23 @@ package discovery
 
 import (
 	"fmt"
-	"net"
 	"time"
 	"vesper/internal/node"
 	"vesper/internal/protocol"
+	"vesper/internal/transport"
 	logUtils "vesper/internal/utils"
 )
 
 
 const DiscoveryPort = 6969
 
-type Transport interface {
-	Broadcast([]byte) error
-	Receive() ([]byte, net.Addr, error)
-}
-
-
 type Service struct {
 	self *node.Node
 	peerTable *PeerTable
-	tx Transport
+	tx transport.Transport
 }
 
-func NewService(n *node.Node, peerTable *PeerTable, tx Transport) *Service{
+func NewService(n *node.Node, peerTable *PeerTable, tx transport.Transport) *Service{
 	return &Service{
 		self: n,
 		peerTable: peerTable,
@@ -39,7 +33,7 @@ func (s *Service) Run() error {
 	logUtils.LogInfo("listening for peers...")
 
 	for {
-		payload, remote, err := s.tx.Receive()
+		payload, remotePeer, err := s.tx.Receive()
 		if err != nil {
 			logUtils.LogError(err.Error())
 			continue
@@ -56,7 +50,7 @@ func (s *Service) Run() error {
 			continue
 		}
 
-		s.handleMessage(msg, remote)
+		s.handleMessage(msg, remotePeer.Address)
 	}
 }
 
@@ -80,24 +74,25 @@ func (s *Service) broadcastLoop() {
 			continue
 		}
 
-		if err := s.tx.Broadcast([]byte(payload)); err != nil {
-			logUtils.LogError(err.Error())
+		if b, ok := s.tx.(transport.Broadcaster); ok {
+			if err := b.Broadcast([]byte(payload)); err != nil {
+				logUtils.LogError(err.Error())
+			}
 		}
 	}
 }
 
-func (s *Service) handleMessage(msg protocol.Message, remote net.Addr) {
+func (s *Service) handleMessage(msg protocol.Message, peerIPAddr string) {
 	switch msg.Type {
 	case protocol.MessageTypeDiscover:
-		remoteIp := remote.(*net.UDPAddr).IP.String()
 		logUtils.LogInfo(
 			fmt.Sprintf(
 				"peer discovered: %s @ %s",
-				msg.OriginNodeName, remoteIp))
+				msg.OriginNodeName, peerIPAddr))
 		s.peerTable.Upsert(node.Node{
 			ID:         msg.OriginNodeID,
 			Name:       msg.OriginNodeName,
-			IpAddr:     remoteIp,
+			IpAddr:     peerIPAddr,
 			LastSeenTS: time.Now(),
 		})
 	}
