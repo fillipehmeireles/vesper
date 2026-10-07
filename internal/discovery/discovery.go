@@ -20,13 +20,14 @@ type Transport interface {
 
 type Service struct {
 	self *node.Node
-	// peerTable *PeerTable
+	peerTable *PeerTable
 	tx Transport
 }
 
-func NewService(n *node.Node, tx Transport) *Service{
+func NewService(n *node.Node, peerTable *PeerTable, tx Transport) *Service{
 	return &Service{
 		self: n,
+		peerTable: peerTable,
 		tx: tx,
 	}
 }
@@ -34,7 +35,8 @@ func NewService(n *node.Node, tx Transport) *Service{
 func (s *Service) Run() error {
 	go s.broadcastLoop()
 
-	logUtils.LogInfo(fmt.Sprintf("%s (%s) Listening", s.self.Name, s.self.IpAddr))
+	logUtils.LogInfo(fmt.Sprintf("node: %s", s.self.Name))
+	logUtils.LogInfo("listening for peers...")
 
 	for {
 		payload, remote, err := s.tx.Receive()
@@ -54,8 +56,6 @@ func (s *Service) Run() error {
 			continue
 		}
 
-
-		fmt.Printf("receiving: %+v\n", msg)
 		s.handleMessage(msg, remote)
 	}
 }
@@ -83,24 +83,22 @@ func (s *Service) broadcastLoop() {
 		if err := s.tx.Broadcast([]byte(payload)); err != nil {
 			logUtils.LogError(err.Error())
 		}
-
-		logUtils.LogInfo("broadcasting!")
 	}
 }
 
 func (s *Service) handleMessage(msg protocol.Message, remote net.Addr) {
-	fmt.Printf("OriginNodeID: %s nodeID: %s", msg.OriginNodeID, s.self.ID)
-	fmt.Println(msg)
-	fmt.Println(remote)
-	/*
 	switch msg.Type {
-	case protocol.Discover:
-		s.peers.Upsert(node.Node{
-			ID:         msg.NodeID,
-			Name:       msg.NodeName,
-			IpAddr:     remote.(*net.UDPAddr).IP.String(),
+	case protocol.MessageTypeDiscover:
+		remoteIp := remote.(*net.UDPAddr).IP.String()
+		logUtils.LogInfo(
+			fmt.Sprintf(
+				"peer discovered: %s @ %s",
+				msg.OriginNodeName, remoteIp))
+		s.peerTable.Upsert(node.Node{
+			ID:         msg.OriginNodeID,
+			Name:       msg.OriginNodeName,
+			IpAddr:     remoteIp,
 			LastSeenTS: time.Now(),
 		})
 	}
-	*/
 }

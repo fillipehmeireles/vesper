@@ -41,7 +41,8 @@ func main() {
 		return
 	}
 
-	service := discovery.NewService(&node, transport)
+	peerTable := discovery.NewPeerTable(3);
+	service := discovery.NewService(&node,peerTable, transport)
 
 	service.Run()
 }
