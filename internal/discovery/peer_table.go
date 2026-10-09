@@ -27,7 +27,7 @@ func (pt *PeerTable) GetPeerTable() map[string]node.Node{
 }
 
 func (pt *PeerTable) GetHistoryPeerTable() map[string]node.Node{
-	return pt.history
+	return pt.historyTable
 }
 
 func (pt *PeerTable) Upsert(node node.Node) {
