@@ -6,7 +6,7 @@ import (
 )
 
 type TCPTransport struct {
-	conn *net.Conn
+	addr string
 }
 
 
@@ -16,7 +16,7 @@ func NewTCPTransport(addr string) (transport.Transport, error) {
 		return nil, err
 	}
 
-	return &TCPTransport { conn: &conn }, nil
+	return &TCPTransport { addr }, nil
 }
 
 func (tx *TCPTransport) Send(msg []byte, address string) error {
