@@ -1,18 +1,22 @@
 package main
 
 import (
+	"fmt"
 	"time"
 	"vesper/internal/cli"
 	"vesper/internal/discovery"
 	ipv4 "vesper/internal/network"
 	"vesper/internal/node"
 	"vesper/internal/transport/udp"
+	"vesper/internal/ui"
 	logUtils "vesper/internal/utils"
 
+	tea "charm.land/bubbletea/v2"
 	"github.com/google/uuid"
 )
 
-func main() {
+
+func mainServer() {
 	cliArgs, err := cli.GetArgs()
 	if err != nil {
 		logUtils.LogError(err.Error())
@@ -45,4 +49,14 @@ func main() {
 	service := discovery.NewService(&node,peerTable, transport)
 
 	service.Run()
+}
+
+func main() {
+
+	uiNodeData := ui.ModelNodeData{NodeName: "node-01", NodeAddr: "192.168.0.25"}
+    p := tea.NewProgram(ui.InitialModel(uiNodeData))
+    if _, err := p.Run(); err != nil {
+        logUtils.LogError(fmt.Sprintf("Alas, there's been an error: %v", err))
+		return
+    }
 }
