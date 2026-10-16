@@ -9,6 +9,7 @@ import (
 	"vesper/internal/node"
 	"vesper/internal/transport/udp"
 	"vesper/internal/ui"
+	discoveryUI "vesper/internal/ui/discovery"
 	logUtils "vesper/internal/utils"
 
 	tea "charm.land/bubbletea/v2"
@@ -16,9 +17,9 @@ import (
 )
 
 
-func mainServer() {
+func setupServer(peerTableChan chan <- discovery.NodeTable) {
 	cliArgs, err := cli.GetArgs()
-	if err != nil {
+	if err != nil 	{
 		logUtils.LogError(err.Error())
 		return
 	}
@@ -45,18 +46,25 @@ func mainServer() {
 		return
 	}
 
-	peerTable := discovery.NewPeerTable(3);
-	service := discovery.NewService(&node,peerTable, transport)
+	service := discovery.NewService(&node,discovery.PeerTableOpts{
+		Capacity: 3,
+		PeerTableChan: peerTableChan,
+	}, transport)
 
 	service.Run()
 }
-
-func main() {
-
+func setupUI(peerTableChan <- chan discovery.NodeTable) {
 	uiNodeData := ui.ModelNodeData{NodeName: "node-01", NodeAddr: "192.168.0.25"}
-    p := tea.NewProgram(ui.InitialModel(uiNodeData))
+	discoveryUIOpts := discoveryUI.DiscoveryUIOpts{PeerTableChan: peerTableChan}
+    p := tea.NewProgram(ui.InitialModel(uiNodeData, discoveryUIOpts))
     if _, err := p.Run(); err != nil {
         logUtils.LogError(fmt.Sprintf("Alas, there's been an error: %v", err))
 		return
     }
+
+}
+func main() {
+	peerTableChan := make (chan discovery.NodeTable, 10)
+	go setupServer(peerTableChan)
+	setupUI(peerTableChan)
 }

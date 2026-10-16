@@ -1,6 +1,9 @@
 package ui
 
-import  tea "charm.land/bubbletea/v2"
+import (
+
+	tea "charm.land/bubbletea/v2"
+)
 
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -12,23 +15,22 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
         case "ctrl+c", "q":
             return m, tea.Quit
 
-        // The "up" and "k" keys move the cursor up
         case "up", "k":
             if m.cursor > 0 {
                 m.cursor--
             }
 
-        // The "down" and "j" keys move the cursor down
         case "down", "j":
             if m.cursor < len(m.choices)-1 {
                 m.cursor++
             }
 
-        // The "enter" key and the space bar toggle the selected state
-        // for the item that the cursor is pointing at.
+		case "esc":
+			m.screen = ScreenMenu
         case "enter":
 			switch m.cursor {
 			case 0:
+				m.screen = ScreenPeers
                 // Discover Peers
             case 1:
                 // List Peers
@@ -38,8 +40,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		}
 	}
+	if m.screen == ScreenPeers {
+        model, c := m.discovery.Update(msg)
+		m.discovery = model
+        return m, c
+    }
 
-	// Return the updated model to the Bubble Tea runtime for processing.
-	// Note that we're not returning a command.
 	return m, nil
 }

@@ -7,7 +7,8 @@ import (
 	tea "charm.land/bubbletea/v2"
 )
 
-func (m Model) View() tea.View {
+
+func (m Model) renderMenu() string {
 	var s strings.Builder
 
     fmt.Fprintf(&s, "Vesper\n%s @ %s\n\n", m.nodeData.NodeName, m.nodeData.NodeAddr)
@@ -20,9 +21,22 @@ func (m Model) View() tea.View {
         fmt.Fprintf(&s, "%s %s\n", cursor, choice)
     }
 
-    // The footer
 	fmt.Fprintf(&s, "\nPress q to quit.\n")
 
-    // Send the UI for rendering
-    return tea.NewView(s.String())
+	return s.String()
+}
+
+
+
+func (m Model) View() tea.View {
+	var content string
+
+	switch m.screen {
+	case ScreenMenu:
+		content = m.renderMenu()
+	case ScreenPeers:
+		content = m.discovery.Render()
+	}
+
+	return tea.NewView(content)
 }

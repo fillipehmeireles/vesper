@@ -1,6 +1,8 @@
 package udp
 
 import (
+	"errors"
+	"fmt"
 	"net"
 	"vesper/internal/transport"
 	logUtils "vesper/internal/utils"
@@ -17,7 +19,7 @@ func NewUDPTransport(port int) (transport.Transport, error) {
 		Port: port,
 	}
 
-	conn, err := net.ListenUDP("udp", addr)
+	conn, err := net.ListenUDP("udp4", addr)
 	if err != nil {
 		return nil, err
 	}
@@ -43,20 +45,87 @@ func (tx *UDPTransport) Receive() ([]byte, transport.Peer, error) {
 		Port: remote.Port,
 	}, nil
 }
+func getBroadcastIPs() ([]net.IP, error) {
+    ifaces, err := net.Interfaces()
+    if err != nil {
+        return nil, err
+    }
+
+    var result []net.IP
+
+    for _, iface := range ifaces {
+        if iface.Flags&net.FlagUp == 0 ||
+            iface.Flags&net.FlagBroadcast == 0 ||
+            iface.Flags&net.FlagLoopback != 0 {
+            continue
+        }
+
+        addrs, err := iface.Addrs()
+        if err != nil {
+            continue
+        }
+
+        for _, addr := range addrs {
+            ipnet, ok := addr.(*net.IPNet)
+            if !ok {
+                continue
+            }
+
+            ip := ipnet.IP.To4()
+            if ip == nil || len(ipnet.Mask) != net.IPv4len {
+                continue
+            }
+
+            broadcast := make(net.IP, net.IPv4len)
+
+            for i := range broadcast {
+                broadcast[i] = ip[i] | ^ipnet.Mask[i]
+            }
+
+            result = append(result, broadcast)
+        }
+    }
+
+    return result, nil
+}
 
 func (tx *UDPTransport) Broadcast(payload []byte) error {
-	addr := &net.UDPAddr{
-		IP:   net.IPv4bcast,
-		Port: tx.port,
-	}
+    ips, err := getBroadcastIPs()
+    if err != nil {
+        return err
+    }
 
-    if _, err := tx.conn.WriteToUDP(payload, addr); err != nil {
-		logUtils.LogError(err.Error())
-		return err
-	}
+    if len(ips) == 0 {
+        return fmt.Errorf("no broadcast interfaces available")
+    }
 
-	return nil
+    var errs []error
+    success := false
+
+    for _, ip := range ips {
+        addr := &net.UDPAddr{
+            IP:   ip,
+            Port: tx.port,
+        }
+
+        _, err := tx.conn.WriteToUDP(payload, addr)
+        if err != nil {
+            errs = append(errs, fmt.Errorf(
+                "broadcast to %s: %w", ip, err,
+            ))
+            continue
+        }
+
+        success = true
+    }
+
+    if !success {
+        return errors.Join(errs...)
+    }
+
+    return nil
 }
+
 
 func (tx* UDPTransport) Send(payload []byte, address string) error {
 	addr, err := net.ResolveUDPAddr("udp", address)

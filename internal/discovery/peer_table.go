@@ -6,27 +6,28 @@ import (
 )
 
 
+type NodeTable map[string]node.Node
 
 type PeerTable struct {
 	Capacity uint
-	table map[string]node.Node
-	historyTable map[string]node.Node
+	table NodeTable
+	historyTable  NodeTable
 }
 
 func NewPeerTable(capacity uint) *PeerTable {
 	return &PeerTable{
 		Capacity: capacity,
-		table: make(map[string]node.Node, capacity),
-		historyTable: make(map[string]node.Node, capacity),
+		table: make(NodeTable, capacity),
+		historyTable: make(NodeTable, capacity),
 	}
 }
 
 
-func (pt *PeerTable) GetPeerTable() map[string]node.Node{
+func (pt *PeerTable) GetPeerTable() NodeTable {
 	return pt.table
 }
 
-func (pt *PeerTable) GetHistoryPeerTable() map[string]node.Node{
+func (pt *PeerTable) GetHistoryPeerTable() NodeTable {
 	return pt.historyTable
 }
 

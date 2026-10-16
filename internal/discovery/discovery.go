@@ -1,12 +1,10 @@
 package discovery
 
 import (
-	"fmt"
 	"time"
 	"vesper/internal/node"
 	"vesper/internal/protocol"
 	"vesper/internal/transport"
-	logUtils "vesper/internal/utils"
 )
 
 
@@ -16,46 +14,36 @@ type Service struct {
 	self *node.Node
 	peerTable *PeerTable
 	tx transport.Transport
+	peerTableChan chan <- NodeTable
 }
 
-func NewService(n *node.Node, peerTable *PeerTable, tx transport.Transport) *Service{
+type PeerTableOpts struct {
+	Capacity uint
+	PeerTableChan chan <- NodeTable
+}
+
+func NewService(n *node.Node, peerTableOpts PeerTableOpts, tx transport.Transport) *Service{
+	peerTable := NewPeerTable(peerTableOpts.Capacity);
 	return &Service{
 		self: n,
 		peerTable: peerTable,
 		tx: tx,
+		peerTableChan: peerTableOpts.PeerTableChan,
 	}
 }
 
 func (s *Service) Run() error {
 	go s.broadcastLoop()
-	fmt.Printf("node: %s\n", s.self.Name)
-	fmt.Println("listening for peers...")
-	fmt.Print("\033[s")
-
 	for {
-		fmt.Print("\033[u")
-		fmt.Print("\033[J")
-
 		s.peerTable.RemoveInactivePeers()
-		fmt.Println("peers:")
-
-		for _, peer := range s.peerTable.GetPeerTable() {
-			fmt.Printf(
-				"  %-10s %-15s seen %.0fs ago\n",
-				peer.Name,
-				peer.IpAddr,
-				time.Since(peer.LastSeenTS).Seconds(),
-			)
-		}
+		s.peerTableChan <- s.peerTable.GetPeerTable()
 		payload, remotePeer, err := s.tx.Receive()
 		if err != nil {
-			logUtils.LogError(err.Error())
 			continue
 		}
 
 		msg, err := protocol.Decode(string(payload))
 		if err != nil {
-			logUtils.LogError(err.Error())
 			continue
 		}
 
@@ -85,13 +73,11 @@ func (s *Service) broadcastLoop() {
 
 		payload, err := protocol.Encode(msg)
 		if err != nil {
-			logUtils.LogError(err.Error())
 			continue
 		}
 
 		if b, ok := s.tx.(transport.Broadcaster); ok {
 			if err := b.Broadcast([]byte(payload)); err != nil {
-				logUtils.LogError(err.Error())
 			}
 		}
 	}
