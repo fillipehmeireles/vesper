@@ -37,7 +37,7 @@ func InitialModel(modelNodeData ModelNodeData, discoveryUIOpts discovery.Discove
 }
 
 func (m Model) Init() tea.Cmd {
-    return nil
+    return m.discovery.WaitForPeers()
 }
 
 type VesperUIModel interface {

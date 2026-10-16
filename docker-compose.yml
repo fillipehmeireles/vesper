@@ -1,6 +1,8 @@
 services:
   node01:
     build: .
+    stdin_open: true
+    tty: true
     command:
       - "--name"
       - "node01"
@@ -12,6 +14,8 @@ services:
 
   node02:
     build: .
+    stdin_open: true
+    tty: true
     command:
       - "--name"
       - "node02"
@@ -23,6 +27,8 @@ services:
 
   node03:
     build: .
+    stdin_open: true
+    tty: true
     command:
       - "--name"
       - "node03"

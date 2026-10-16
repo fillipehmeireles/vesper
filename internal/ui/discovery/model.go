@@ -10,6 +10,10 @@ type DiscoveryUIOpts struct {
 	PeerTableChan <- chan discovery.NodeTable
 }
 
+type PeersUpdatedMsg struct {
+    Peers discovery.NodeTable
+}
+
 type Model struct {
     peerTable table.Model
 	peerTableChan <- chan discovery.NodeTable

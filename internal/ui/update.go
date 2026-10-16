@@ -1,12 +1,19 @@
 package ui
 
 import (
+	"vesper/internal/ui/discovery"
 
 	tea "charm.land/bubbletea/v2"
 )
 
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	if _, ok := msg.(discovery.PeersUpdatedMsg); ok {
+        var cmd tea.Cmd
+        m.discovery, cmd = m.discovery.Update(msg)
+        return m, cmd
+    }
+
     switch msg := msg.(type) {
 
     case tea.KeyPressMsg:

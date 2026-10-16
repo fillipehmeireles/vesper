@@ -35,8 +35,6 @@ func NewService(n *node.Node, peerTableOpts PeerTableOpts, tx transport.Transpor
 func (s *Service) Run() error {
 	go s.broadcastLoop()
 	for {
-		s.peerTable.RemoveInactivePeers()
-		s.peerTableChan <- s.peerTable.GetPeerTable()
 		payload, remotePeer, err := s.tx.Receive()
 		if err != nil {
 			continue
@@ -53,6 +51,20 @@ func (s *Service) Run() error {
 		}
 
 		s.handleMessage(msg, remotePeer.Address)
+
+		s.peerTable.RemoveInactivePeers()
+		// Snapshot to avoid sharing a mutable map
+        snapshot := make(NodeTable)
+
+        for id, peer := range s.peerTable.GetPeerTable() {
+            snapshot[id] = peer
+        }
+
+        // Don't block UDP reception if the UI is behind
+        select {
+        case s.peerTableChan <- snapshot:
+        default:
+        }
 	}
 }
 
