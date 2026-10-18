@@ -12,7 +12,7 @@ const DiscoveryPort = 6969
 
 type Service struct {
 	self *node.Node
-	peerTable *PeerTable
+	PeerTable *PeerTable
 	tx transport.Transport
 	peerTableChan chan <- NodeTable
 }
@@ -23,10 +23,10 @@ type PeerTableOpts struct {
 }
 
 func NewService(n *node.Node, peerTableOpts PeerTableOpts, tx transport.Transport) *Service{
-	peerTable := NewPeerTable(peerTableOpts.Capacity);
+	PeerTable := NewPeerTable(peerTableOpts.Capacity);
 	return &Service{
 		self: n,
-		peerTable: peerTable,
+		PeerTable: PeerTable,
 		tx: tx,
 		peerTableChan: peerTableOpts.PeerTableChan,
 	}
@@ -52,19 +52,7 @@ func (s *Service) Run() error {
 
 		s.handleMessage(msg, remotePeer.Address)
 
-		s.peerTable.RemoveInactivePeers()
-		// Snapshot to avoid sharing a mutable map
-        snapshot := make(NodeTable)
-
-        for id, peer := range s.peerTable.GetPeerTable() {
-            snapshot[id] = peer
-        }
-
-        // Don't block UDP reception if the UI is behind
-        select {
-        case s.peerTableChan <- snapshot:
-        default:
-        }
+		s.PeerTable.RemoveInactivePeers()
 	}
 }
 
@@ -98,7 +86,7 @@ func (s *Service) broadcastLoop() {
 func (s *Service) handleMessage(msg protocol.Message, peerIPAddr string) {
 	switch msg.Type {
 	case protocol.MessageTypeDiscover:
-		s.peerTable.Upsert(node.Node{
+		s.PeerTable.Upsert(node.Node{
 			ID:         msg.OriginNodeID,
 			Name:       msg.OriginNodeName,
 			IpAddr:     peerIPAddr,

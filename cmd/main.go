@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"time"
+	"vesper/internal/app"
 	"vesper/internal/cli"
 	"vesper/internal/discovery"
 	ipv4 "vesper/internal/network"
@@ -17,13 +18,7 @@ import (
 )
 
 
-func setupServer(peerTableChan chan <- discovery.NodeTable) {
-	cliArgs, err := cli.GetArgs()
-	if err != nil 	{
-		logUtils.LogError(err.Error())
-		return
-	}
-
+func setupServer(cliArgs cli.CliArgs, peerTableChan chan <- discovery.NodeTable) {
 	ip, err := ipv4.GetNodeIP()
 	if err != nil {
 		logUtils.LogError(err.Error())
@@ -51,7 +46,9 @@ func setupServer(peerTableChan chan <- discovery.NodeTable) {
 		PeerTableChan: peerTableChan,
 	}, transport)
 
-	service.Run()
+	runtime := app.NewRuntime(&node, service, service.PeerTable, transport)
+
+	go runtime.Run()
 }
 func setupUI(peerTableChan <- chan discovery.NodeTable) {
 	uiNodeData := ui.ModelNodeData{NodeName: "node-01", NodeAddr: "192.168.0.25"}
@@ -64,7 +61,15 @@ func setupUI(peerTableChan <- chan discovery.NodeTable) {
 
 }
 func main() {
+	cliArgs, err := cli.GetArgs()
+	if err != nil 	{
+		logUtils.LogError(err.Error())
+		return
+	}
+
 	peerTableChan := make (chan discovery.NodeTable, 10)
-	go setupServer(peerTableChan)
-	setupUI(peerTableChan)
+	setupServer(cliArgs, peerTableChan)
+	if !cliArgs.Headless {
+		setupUI(peerTableChan)
+	}
 }
